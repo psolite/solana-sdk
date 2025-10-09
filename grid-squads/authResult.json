@@ -1,0 +1,63 @@
+{
+  "address": "xxxxxxxxxxxxxxxxxxxxxxxxxx",
+  "policies": {
+    "signers": [
+      {
+        "address": "xxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+        "role": "backup",
+        "permissions": [
+          "CAN_INITIATE",
+          "CAN_VOTE",
+          "CAN_EXECUTE"
+        ],
+        "provider": "turnkey"
+      },
+      {
+        "address": "xxxxxxxxxxxxxxxxxxx",
+        "role": "primary",
+        "permissions": [
+          "CAN_INITIATE",
+          "CAN_VOTE",
+          "CAN_EXECUTE"
+        ],
+        "provider": "privy"
+      }
+    ],
+    "threshold": 1,
+    "time_lock": null,
+    "admin_address": null
+  },
+  "grid_user_id": "b1d7109e-3c40-4665-xxxxxxx-580b9586b9fa",
+  "authentication": [
+    {
+      "provider": "privy",
+      "session": {
+        "Privy": {
+          "user_id": "did:privy:xxxxxxxxxxxxxxxxxxx",
+          "session": {
+            "encrypted_authorization_key": {
+              "encryption_type": "HPKE",
+              "encapsulated_key": "BLuR1xNsp+yNA+xxxxxxxxxxxxxxxxxxxxxxxxxxxxx=",
+              "ciphertext": "xxxxxxxxxxxxxxxxxxxx/Gd/g6QAHmpTCvfXH/xxxxxxxxxxxxxx/H5ypYzJ5Xx1DQ+xxxxxxxxxxxx+xxxxxx+xxxxxxxxx="
+            },
+            "expires_at": 1760024357420,
+            "wallets": [
+              {
+                "id": "xxxxxxxxxxxxxxxxxx",
+                "address": "xxxxxxxxxxxxxxxxxxxxxx",
+                "public_key": null,
+                "created_at": 1759844717297,
+                "chain_type": "solana",
+                "policy_ids": [],
+                "owner_id": "xxxxxxxxxxxxxxxxxxx",
+                "additional_signers": [],
+                "exported_at": null,
+                "imported_at": null
+              }
+            ]
+          }
+        }
+      }
+    }
+  ]
+}

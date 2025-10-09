@@ -10,10 +10,18 @@
   "description": "",
   "dependencies": {
     "@onsol/tldparser": "^1.0.8",
+    "@solana-program/system": "^0.8.0",
     "@solana/kit": "^3.0.3",
-    "@solana/web3.js": "^1.98.4"
+    "@solana/spl-token": "^0.4.14",
+    "@solana/web3.js": "^1.98.4",
+    "@sqds/grid": "^0.1.0",
+    "base-58": "^0.0.1",
+    "bs58": "^6.0.0",
+    "dotenv": "^17.2.3"
   },
   "devDependencies": {
-    "tsx": "^4.20.5"
+    "ts-node": "^10.9.2",
+    "tsx": "^4.20.5",
+    "typescript": "^5.9.2"
   }
 }
