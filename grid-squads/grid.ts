@@ -1,9 +1,13 @@
 
 
 import 'dotenv/config';
-import { CompleteAuthResponse, GridClient, GridClientUserContext, SessionSecrets, SpendingLimitPeriod, SpendingLimitRequest, SplTransfer } from "@sqds/grid";
+import { CompleteAuthResponse, GridClient, GridClientUserContext, SessionSecrets, SpendingLimitPeriod, SpendingLimitRequest, SplTransfer, TransactionPayload } from "@sqds/grid";
 import savedAuthResult from "./authResult.json"
 import savedSessionSecrets from "./sessionSecret.json"
+import { Connection, Keypair, PublicKey, Transaction } from '@solana/web3.js';
+import { createTransferInstruction, getAssociatedTokenAddress } from '@solana/spl-token';
+import wallet from "../PsVDCuwtGVSHswAw1qvTGdNaQrUkKVHKkKpBnRV4t52.json"
+// import { buildGatewayTransactionn, sendTransaction } from '../gateway-santcum/gateway';
 
 const useEmail = "chiemelie212x@gmail.com"
 let gridClient: GridClient;
@@ -14,8 +18,8 @@ let authResult: CompleteAuthResponse;
 
 export async function client() {
     gridClient = new GridClient({
-        environment: "sandbox", // Use 'production' for live applications
-        apiKey: process.env.GRID_API_KEY!, // Your API key from the dashboard
+        environment: "production", // Use 'production' for live applications
+        apiKey: process.env.GRID_API_KEY_PRODUCTION!, // Your API key from the dashboard
         baseUrl: "https://grid.squads.xyz", // Base URL of the Grid API
     });
     return gridClient
@@ -43,7 +47,7 @@ export async function gridCreateAccount(email: string) {
 }
 
 export async function completeAuthAndCreateAccount(email: string, otpCode: string) {
- sessionSecrets = await generateSessionSecrets()
+    sessionSecrets = await generateSessionSecrets()
     const user: GridClientUserContext = {
         signers: [],
         email
@@ -59,7 +63,7 @@ export async function completeAuthAndCreateAccount(email: string, otpCode: strin
     } else {
         throw Error("not working")
     }
-    console.log('Account created successfully', verifiedAccount);
+    console.log('Account created successfully', JSON.stringify(verifiedAccount, null, 2));
     return verifiedAccount;
 }
 
@@ -99,39 +103,90 @@ export async function AuthenticateExistingAccount(email: string, otpCode: string
 
     console.log('Account authenticated successfully', JSON.stringify(authResult, null, 2));
 
-    return {authResult, sessionSecrets}
+    return { authResult, sessionSecrets }
 }
 
 
 export async function executeTransaction() {
 
     try {
-        const spendingLimitPayload: SpendingLimitRequest = {
-            amount: 100000, // eg 0.1 USDC (USDC uses 6 decimal places)
-            mint: "3hA3XL7h84N1beFWt3gwSRCDAf5kwZu81Mf1cpUHKzce", // USDC token mint
-            period: "one_time", // Options: 'one_time' | 'daily' | 'weekly' | 'monthly';
-            destinations: ["GTjTKnQqo5oreKK1hanQgnE3tnL2hN4xxdLoDf9n8WMD"], // Replace with actual destination
-            spending_limit_signers: [authResult.address]
-        };
+        const feePayer = Keypair.fromSecretKey(new Uint8Array(wallet))
+        const connection = new Connection(process.env.RPC || "")
 
-        const result = await gridClient.createSpendingLimit(
+        const mintAddress = new PublicKey("3yGZMxqt6kLUSHhZEbTgnTnvGxn2BhH3aqs7aiac2tF2")
+        const sourceWallet = new PublicKey(authResult.address)
+        const user = new PublicKey("PsVDCuwtGVSHswAw1qvTGdNaQrUkKVHKkKpBnRV4t52")
+
+        // 1. Build your SPL transfer transaction (using @solana/web3.js)
+        const tx = new Transaction()
+        const sourceAccountAta = await getAssociatedTokenAddress(mintAddress, sourceWallet, true);
+        const destinationAccountAta = await getAssociatedTokenAddress(mintAddress, user);
+
+        // const destinationAccount = await connection.getAccountInfo(destinationAccountAta);
+
+        // // Create destination ATA if it does not exist
+        //         if (!destinationAccount) {
+        //             tx.add(createAssociatedTokenAccountInstruction(
+        //                 merchant.publicKey,
+        //                 destinationAccountAta,
+        //                 user,
+        //                 mintAddress
+        //             ));
+        //         }
+
+        tx.add(createTransferInstruction(
+            sourceAccountAta,
+            destinationAccountAta,
+            sourceWallet,
+            100
+        ));
+
+        tx.feePayer = sourceWallet
+
+        const latestBlockHash = await connection.getLatestBlockhash({ commitment: "confirmed" });
+        tx.recentBlockhash = latestBlockHash.blockhash;
+
+        const transaction = tx.serialize({ requireAllSignatures: false }).toString('base64')
+
+
+        const gridtx = await gridClient.prepareArbitraryTransaction(
             authResult.address,
-            spendingLimitPayload
+            {
+                transaction,
+                fee_config: {
+                    currency: 'sol', // or 'usdc'
+                    payer_address: authResult.address
+                }
+            }
         );
-        console.log(result)
-        if (!result?.data) {
+
+        console.log(gridtx)
+        if (!gridtx?.data) {
             throw new Error("verifiedAccount.data.address is undefined");
         }
-        // Sign and submit with managed authentication
-        const signature = await gridClient.signAndSend({
+        console.log("opppppppppppppppppppppppppppppppppppppppppppppppppppppp")
+        // 2. Prepare the transaction
+        const transactionPayload: TransactionPayload = gridtx.data
+
+
+        // const trxx: string = await buildGatewayTransactionn(gridtx.data.transaction)
+
+        // Sign with managed authentication
+        const transactionResult = await gridClient.signAndSend({
             sessionSecrets, // From account creation step
             session: authResult.authentication, // Auth token from previous step
-            transactionPayload: result.data, // Transaction data from spending limit creation
-            address: authResult.address, // Your account address
+            transactionPayload: transactionPayload, // Transaction data from spending limit creation
+            address: authResult.address
         });
 
-        console.log("Transaction executed successfully!");
-        console.log("Signature:", signature);
+ console.log("opppppppppppppppppppppppppppppppppppppppppppppppppppppp", transactionResult)
+        // If transactionResult.transaction.messageBytes exists and is of type TransactionMessageBytes, use it
+
+        // const signature = await sendTransaction(transactionResult.transaction);
+
+ console.log("opppppppppppppppppppppppppppppppppppppppppppppppppppppp")
+        // console.log("Transaction executed successfully!");
+        // console.log("Signature:", signature);
 
     } catch (error) {
         console.error('Transaction error:', error);
@@ -180,24 +235,42 @@ export async function verifyTransaction() {
     // });
 }
 
+async function isActive(timestamp: number) {
+
+    const now = Date.now();
+console.log(timestamp, now);
+    if (timestamp > now) {
+        console.log("Active");
+        return true
+    } else {
+        console.log("Expired");
+        return false
+    }
+}
+
 async function run() {
     await client() // must run before others 
 
     // For new Users
     // await gridCreateAccount(useEmail) // to get the code
-    // await completeAuthAndCreateAccount(useEmail, "781888")// add the code here
+    // await completeAuthAndCreateAccount(useEmail, "763045")// add the code here
 
     // For Old Users 
     // await OTPForExistingAccount(useEmail) // to get the code
-    // await AuthenticateExistingAccount(useEmail, "163484") // add the code here
+    // await AuthenticateExistingAccount(useEmail, "615464") // add the code here
 
     // use if you have saved them locally
-    authResult = savedAuthResult as any 
-    sessionSecrets = savedSessionSecrets as any 
+    authResult = savedAuthResult as any
+    sessionSecrets = savedSessionSecrets as any
 
-    console.log( [...savedSessionSecrets])
+    const use: any = authResult
+    console.log( use.authentication[0].session?.Privy?.session.expires_at)
+
+    isActive(use.authentication[0].session?.Privy?.session.expires_at)
+    // console.log( [...savedSessionSecrets])
     await executeTransaction()
-    await verifyTransaction()
+    // await verifyTransaction()
+
 }
 
 run()
