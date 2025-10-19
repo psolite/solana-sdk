@@ -9,7 +9,7 @@ import { createTransferInstruction, getAssociatedTokenAddress } from '@solana/sp
 import wallet from "../PsVDCuwtGVSHswAw1qvTGdNaQrUkKVHKkKpBnRV4t52.json"
 // import { buildGatewayTransactionn, sendTransaction } from '../gateway-santcum/gateway';
 
-const useEmail = "chiemelie212x@gmail.com"
+const useEmail = "chiemelie@gmail.com"
 let gridClient: GridClient;
 let sessionSecrets: SessionSecrets;
 let authResult: CompleteAuthResponse;
